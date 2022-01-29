@@ -2,18 +2,23 @@
 import subprocess, os, os.path, re
 from pathlib import PurePath
 
-commandDir = '/home/anon/proj/ytdler/testcommands/'
-dlDir = '/home/anon/proj/ytdler/'
+commandDir = '/ytdlcmd/'
+dlDir = '/complete/'
 
 def scanFolder():
+    os.chdir(commandDir)
     for item in os.listdir(commandDir):
         if os.path.isfile(item) and item.endswith('.txt'):
-            print('handling ' + item)
+            p('handling ' + item)
             try:
+                rename(item, 'processing')
+                item = item + '.processing'
                 handleFile(item)
                 rename(item, 'ok')
             except Exception as e:
-                print(e)
+                p(e)
+                p('failed rescanning and renaming file')
+                rescan()
                 rename(item, 'fail')
 
 def rename(filename, suffix):
@@ -35,6 +40,7 @@ def handleFile(file):
             else:
                 validateUrl(line)
                 handleLine(line, path)
+        rescan()
 
 def appendslash(path):
     if path.endswith('/'):
@@ -59,11 +65,19 @@ def validateUrl(url):
 
 def handleFirstLine(path):
     os.chdir(dlDir)
-    print(subprocess.run(['mkdir', '-p', path], text=True, capture_output=True))
+    p(subprocess.run(['mkdir', '-p', path], text=True, capture_output=True))
     os.chdir(dlDir+path)
 
 def handleLine(url, path):
-    print(url)
-    print(subprocess.run(['youtube-dl', '--no-part', '-q', url], text=True, capture_output=True))
+    p(url + ' download started')
+    p(subprocess.run(['yt-dlp', '-f', 'bestvideo[ext=mp4]+bestaudio[ext=m4a]/mp4', '--no-part', '-q', url], text=True, capture_output=True))
+    p('done')
     
+def rescan(): 
+    p(subprocess.run(['sudo','rescan'], text=True, capture_output=True))
+    p('rescan ok')
+
+def p(txt):
+    print(txt, flush=True)
+
 scanFolder()
